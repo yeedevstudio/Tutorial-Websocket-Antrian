@@ -78,7 +78,7 @@ io.on('connection', (socket) => {
                 status_panggil: status_panggil,
             });
         } else {
-            let pesan = `Tidak Dapat Klik Panggil Karena Status Panggil Sedang Aktif Oleh Loket ${loket} , Suruh Stop Panggil Dulu Sama Loket ${loket}`;
+            let pesan = `Tidak Dapat Klik Panggil Karena Status Panggil Sedang Aktif Oleh Loket ${loket}`;
             io.emit(`peringatan ${data.loket}`, pesan); // emit pesan peringatan ke loket terkait
         }
     });
