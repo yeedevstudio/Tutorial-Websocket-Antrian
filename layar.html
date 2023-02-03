@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <meta charset = "utf-8">
+    <meta name = "viewport" content = "width=device-width, initial-scale = 1">
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=dttXaNpR"></script>
+    <script type="text/javascript">
+    function play(nomor_antrian, loket){
+        responsiveVoice.speak(
+        `Nomor Antrian ${nomor_antrian} , ke loket ${loket}.`,
+        "Indonesian Female",
+        {
+            pitch: 1, 
+            rate: 0.9, 
+            volume: 1
+        }
+        );
+    }
+    </script>
+    <title>Layar Antrian</title>
+</head>
+<body>
+    <div class = "container">
+    <div class="card text-white bg-success mt-2" style="width: 30rem;">
+        <div class="card-body">
+        <h2 class="card-title text-center mb-3"><b>LAYAR ANTRIAN </b></h2>
+        <h1 style="font-size: 100px;" class="card-subtitle   mb-3 text-center" id="nomor_antrian">0</h1>
+        <h4 class="card-subtitle mb-2 ">LOKET : <a id="loket">-</a></h4>
+        <h4 class="card-subtitle mb-2 ">STATUS PANGGIL : <a id="status_panggil">-</a></h4>
+        <button type="button" class="btn btn-danger" onclick="reset()">Reset</button>
+        </div>
+    </div>
+    </div>
+</body>
+    <script src="https://cdn.socket.io/4.5.3/socket.io.min.js" integrity="sha384-WPFUvHkB1aHA5TDSZi6xtDgkF0wXJcIIxXhC6h8OT8EH3fC5PWro5pWJ1THjcfEi" crossorigin="anonymous"></script>
+    <script>
+        const socket = io("http://localhost:3000");
+
+        let nomor_antrian = document.getElementById('nomor_antrian');
+        let loket = document.getElementById('loket');
+        let status_panggil = document.getElementById('status_panggil');
+
+        // dijalankan ketika pertama kali dibuka
+        socket.emit("hubungkan layar", 'kosong'); // kirim data ke server 
+
+        // jika client ini berhasil terhubung, maka nomor antrian saat ini akan di set sesuai dengan data dari server
+        socket.on(`layar terhubung`, function(data) {  // dapat data dari server
+            nomor_antrian.replaceChildren(data.no_antrian);
+            loket.replaceChildren(data.loket);
+            status_panggil.replaceChildren(data.status_panggil);
+        });
+
+        socket.on('update antrian', function(data) {  // dapat data dari server
+            play(parseInt(data.no_antrian), data.loket); // play suara pemanggilan antrian
+            nomor_antrian.replaceChildren(data.no_antrian);
+            loket.replaceChildren(data.loket);
+            status_panggil.replaceChildren(data.status_panggil);
+        });
+
+        socket.on('stop status panggil', function(data) {  // dapat data dari server
+            status_panggil.replaceChildren(data.status_panggil);
+        });
+
+        // Tombol Reset
+        function reset() {
+        socket.emit("reset", ''); // kirim ke server
+        }
+
+    </script>
+</html>

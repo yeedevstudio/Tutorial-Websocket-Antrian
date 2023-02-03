@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+        <meta charset = "utf-8">
+        <meta name = "viewport" content = "width=device-width, initial-scale = 1">
+        <title>LOKET</title>
+    </head>
+    <body>
+        <div class = "container">
+        <div class="card mt-2" style="width: 30rem;">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4"><b>LOKET </b><b id="id_loket">[id_loket]</b></h2>
+                <h4 class="card-subtitle mb-2 text-muted">NO ANTRIAN : <a id="nomor_antrian">0</a></h4>
+                <h4 class="card-subtitle mb-2 text-muted">LOKET : <a id="loket_antrian">-</a></h4>
+                <h4 class="card-subtitle mb-2 text-muted">STATUS PANGGIL : <a id="status_panggil">-</a></h4>
+                <button type="button" class="btn btn-success" onclick="panggil()">Panggil Antrian Selanjutnya</button>
+                <button type="button" class="btn btn-danger" onclick="stop_panggil()">Stop Panggil</button>
+                </div>
+                <div class="card-body">
+                <h5 class="card-subtitle mb-2 text-muted">CUSTOM ANTRIAN</h5>
+                <input class="form-control mb-2" id="input_custom_nomor_antrian" placeholder="Masukkan Nomor Antrian">
+                <button type="button" class="btn btn-primary" onclick="panggil_custom_antrian(input_custom_nomor_antrian.value)">Panggil Custom Antrian</button>
+            </div>
+        </div>
+        </div>
+    </body>
+    <script src="https://cdn.socket.io/4.5.3/socket.io.min.js" integrity="sha384-WPFUvHkB1aHA5TDSZi6xtDgkF0wXJcIIxXhC6h8OT8EH3fC5PWro5pWJ1THjcfEi" crossorigin="anonymous"></script>
+    <script>
+        var socket = io("http://localhost:3000");
+
+        let nomor_antrian = document.getElementById('nomor_antrian');
+        let loket_antrian = document.getElementById('loket_antrian');
+        let status_panggil = document.getElementById('status_panggil');
+
+        let id_loket = document.getElementById('id_loket'); // dari inputan
+        let input_custom_nomor_antrian = document.getElementById('input_custom_nomor_antrian');
+
+        // dijalankan ketika pertama kali dibuka
+        let input_id_loket = prompt("Masukkan ID Loket", '1');
+        if(input_id_loket == null) {input_id_loket = 1;}
+        id_loket.replaceChildren(input_id_loket);
+        socket.emit("hubungkan loket", input_id_loket); // emit ke server antrian ketika pertama kali dijalankan
+
+        // jika client loket antrian ini berhasil terhubung, maka nomor antrian saat ini akan di set sesuai dengan data dari server
+        socket.on(`loket ${input_id_loket} terhubung`, function(data) {  // dapat data dari server antrian
+            nomor_antrian.replaceChildren(data.no_antrian);
+            loket_antrian.replaceChildren(data.loket);
+            status_panggil.replaceChildren(data.status_panggil);
+        });
+
+        socket.on('update antrian', function(data) {  // dapat data dari server antrian
+            nomor_antrian.replaceChildren(data.no_antrian);
+            loket_antrian.replaceChildren(data.loket);
+            status_panggil.replaceChildren(data.status_panggil);
+        });
+
+        socket.on('stop status panggil', function(data) {  // dapat data dari server antrian
+            status_panggil.replaceChildren(data.status_panggil);
+        });
+
+         // untuk tampilkan peringatan dari server kepada client terkait
+        socket.on(`peringatan ${input_id_loket}`, function(pesan) { // dapat data dari server antrian
+            console.log(pesan);
+            peringatan("Gagal", pesan);
+        });
+
+        // Tombol Panggil
+        function panggil() {
+            socket.emit("panggil", { // emit data ke server
+                loket : input_id_loket,
+            });
+        }
+
+        // Tombol Stop Panggil
+        function stop_panggil() {
+            socket.emit("stop panggil", { // emit data ke server
+                loket : input_id_loket,
+            });
+        }
+
+        // tombol Panggil Custom Antrian
+        function panggil_custom_antrian(no_antrian) {
+            input_custom_nomor_antrian.value = ''; // mengosongkan kolom input 
+            socket.emit("panggil custom antrian", { // emit data ke server
+                loket : input_id_loket,
+                no_antrian : no_antrian,
+            });
+        }
+
+        function peringatan(kondisi, pesan) {
+            swal({
+                title: kondisi,
+                text: pesan,
+                icon: 'error',
+                button: true
+            });
+        }
+
+    </script>
+</html>
